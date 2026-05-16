@@ -4,33 +4,165 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AnswerLayer Embed API Demo</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+  />
   <style>
+    /* ============================================
+       AnswerLayer Embed API Demo
+       CRT Brutalist aesthetic with navy palette
+       ============================================ */
     :root {
       color-scheme: light;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #17202a;
-      background: #f6f7f9;
+
+      /* Navy color palette (primary brand colors) */
+      --navy-50: #eef1fa;
+      --navy-100: #dbe1f3;
+      --navy-200: #aebce5;
+      --navy-300: #8997d6;
+      --navy-400: #6275c7;
+      --navy-600: #384393;
+      --navy-700: #2a3477;
+      --navy-800: #1f2858;
+      --navy-900: #151c3f;
+      --navy-950: #0c1129;
+
+      --background: #f1f4f9;
+      --foreground: #0f172a;
+
+      --font-display: "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
+      --font-mono: "Space Mono", "IBM Plex Mono", "Courier New", monospace;
     }
-    body {
+
+    *, *::before, *::after {
+      box-sizing: border-box;
       margin: 0;
-      padding: 24px;
+      padding: 0;
     }
+
+    body {
+      font-family: var(--font-mono);
+      color: var(--foreground);
+      background: var(--background);
+      padding: 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+
     main {
       max-width: 1120px;
       margin: 0 auto;
     }
-    h1 {
-      margin: 0 0 16px;
-      font-size: 24px;
-      font-weight: 700;
+
+    /* Global scanline overlay */
+    .scanline-overlay {
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(21, 28, 63, 0.05) 0,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+      z-index: 9999;
     }
-    .panel {
+
+    /* Chromatic aberration for headings */
+    .crt-text {
+      text-shadow:
+        -1px 0 rgba(56, 67, 147, 0.5),
+        1px 0 rgba(137, 151, 214, 0.5),
+        0 0 3px rgba(56, 67, 147, 0.3);
+    }
+
+    /* --- Site header --- */
+    .site-header {
+      max-width: 1120px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
       background: #fff;
-      border: 1px solid #d9dee7;
-      border-radius: 8px;
-      padding: 16px;
+      border: 2px solid var(--navy-900);
+      padding: 12px 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .brand .logo {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+    .wordmark {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      color: var(--navy-900);
+    }
+    .tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--navy-600);
+      border-left: 2px solid var(--navy-200);
+      padding-left: 10px;
+    }
+    .header-link {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--navy-900);
+      text-decoration: none;
+      border: 2px solid var(--navy-900);
+      padding: 6px 12px;
+      transition: background .15s ease, color .15s ease;
+      white-space: nowrap;
+    }
+    .header-link:hover {
+      background: var(--navy-900);
+      color: #fff;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      color: var(--navy-900);
       margin-bottom: 16px;
     }
+
+    /* --- Panels & cards (technical double-border) --- */
+    .panel,
+    .tile {
+      background: #fff;
+      border: 2px solid var(--navy-900);
+      padding: 16px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .panel::before,
+    .tile::before {
+      content: "";
+      position: absolute;
+      inset: -5px;
+      border: 1px solid var(--navy-300);
+      pointer-events: none;
+    }
+
     .controls {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -39,24 +171,34 @@
     label {
       display: grid;
       gap: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #435064;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--navy-700);
     }
     input, textarea {
       height: 36px;
-      border: 1px solid #cbd3df;
-      border-radius: 6px;
+      border: 2px solid var(--navy-300);
+      border-radius: 0;
       padding: 0 10px;
       font: inherit;
+      font-size: 13px;
+      color: var(--foreground);
+      background: #fff;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--navy-600);
     }
     textarea {
       height: 74px;
       padding: 10px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 12px;
       resize: vertical;
     }
+
     .actions {
       display: flex;
       flex-wrap: wrap;
@@ -65,42 +207,53 @@
     }
     button {
       height: 36px;
-      border: 1px solid #1f5eff;
-      border-radius: 6px;
-      padding: 0 12px;
-      background: #1f5eff;
+      border: 2px solid var(--navy-600);
+      border-radius: 0;
+      padding: 0 14px;
+      background: var(--navy-600);
       color: #fff;
-      font-weight: 650;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
       cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+    }
+    button:hover:not(:disabled) {
+      background: var(--navy-700);
+      border-color: var(--navy-700);
     }
     button.secondary {
       background: #fff;
-      color: #1f5eff;
+      color: var(--navy-900);
+      border-color: var(--navy-900);
+    }
+    button.secondary:hover:not(:disabled) {
+      background: var(--navy-900);
+      color: #fff;
     }
     button:disabled {
-      opacity: .55;
+      opacity: .45;
       cursor: not-allowed;
     }
+
+    /* --- Status console (CRT terminal) --- */
     .status {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-family: var(--font-mono);
       font-size: 12px;
       white-space: pre-wrap;
-      background: #101828;
-      color: #d7e3ff;
-      border-radius: 8px;
+      background: var(--navy-950);
+      color: var(--navy-100);
       padding: 12px;
       min-height: 120px;
       overflow: auto;
+      border: 2px solid var(--navy-800);
     }
+
     .tiles {
       display: grid;
-      gap: 10px;
-    }
-    .tile {
-      border: 1px solid #d9dee7;
-      border-radius: 8px;
-      padding: 12px;
-      background: #fff;
+      gap: 16px;
     }
     .tile header {
       display: flex;
@@ -109,21 +262,38 @@
       margin-bottom: 8px;
     }
     .tile h2 {
-      margin: 0;
+      font-family: var(--font-display);
       font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      color: var(--navy-900);
     }
+    .tile header > div > div {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--navy-600);
+      margin-top: 2px;
+    }
+
     .badge {
-      font-size: 12px;
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: #eef3ff;
-      color: #1f5eff;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 3px 8px;
+      border: 1px solid var(--navy-300);
+      background: var(--navy-50);
+      color: var(--navy-700);
       white-space: nowrap;
     }
+
     .tile-actions {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
+      align-items: center;
       margin: 10px 0;
     }
     .meta-grid {
@@ -133,18 +303,19 @@
       margin: 10px 0;
     }
     .meta-box {
-      border: 1px solid #edf0f5;
-      border-radius: 6px;
+      border: 1px solid var(--navy-200);
       padding: 8px;
-      background: #fbfcfe;
+      background: var(--navy-50);
       min-width: 0;
     }
     .meta-box h3 {
       margin: 0 0 6px;
-      font-size: 12px;
-      color: #526072;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--navy-700);
       text-transform: uppercase;
-      letter-spacing: .04em;
+      letter-spacing: .06em;
     }
     .meta-box div,
     .meta-box pre {
@@ -155,13 +326,13 @@
     .meta-box pre {
       overflow: auto;
       max-height: 150px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-family: var(--font-mono);
       white-space: pre-wrap;
       word-break: break-word;
     }
+
     .preview {
-      border: 1px solid #d9dee7;
-      border-radius: 6px;
+      border: 1px solid var(--navy-200);
       padding: 10px;
       margin: 10px 0;
       background: #fff;
@@ -172,13 +343,19 @@
       justify-content: space-between;
       gap: 8px;
       margin-bottom: 8px;
+      font-family: var(--font-display);
       font-size: 13px;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      color: var(--navy-900);
     }
     .metric-value {
-      font-size: 28px;
+      font-family: var(--font-display);
+      font-size: 30px;
       line-height: 1.1;
-      font-weight: 750;
+      font-weight: 700;
+      color: var(--navy-900);
       margin: 4px 0;
     }
     .bars {
@@ -193,18 +370,17 @@
       font-size: 12px;
     }
     .bar-track {
-      height: 10px;
-      border-radius: 999px;
-      background: #eef1f6;
+      height: 12px;
+      background: var(--navy-50);
+      border: 1px solid var(--navy-200);
       overflow: hidden;
     }
     .bar-fill {
       height: 100%;
-      border-radius: inherit;
-      background: #1f5eff;
+      background: var(--navy-600);
     }
     .muted {
-      color: #667085;
+      color: var(--navy-600);
     }
     table {
       width: 100%;
@@ -213,7 +389,7 @@
     }
     th, td {
       padding: 6px 8px;
-      border-top: 1px solid #edf0f5;
+      border-top: 1px solid var(--navy-100);
       text-align: left;
       max-width: 220px;
       overflow: hidden;
@@ -221,20 +397,65 @@
       white-space: nowrap;
     }
     th {
-      color: #526072;
-      font-weight: 700;
+      font-family: var(--font-display);
+      color: var(--navy-700);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-top: none;
+      border-bottom: 2px solid var(--navy-200);
     }
+
+    ::selection {
+      background: var(--navy-600);
+      color: #fff;
+    }
+    ::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--background);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--navy-600);
+      border: 2px solid var(--background);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--navy-700);
+    }
+
     @media (max-width: 760px) {
       body { padding: 12px; }
       .controls { grid-template-columns: 1fr; }
       .meta-grid { grid-template-columns: 1fr; }
       .bar-row { grid-template-columns: 1fr; }
+      .tag { display: none; }
     }
   </style>
 </head>
 <body>
+  <div class="scanline-overlay" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="10" y="10" width="80" height="80" rx="15" fill="#3A4494" />
+        <text x="50" y="45" font-family="serif" font-size="32" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">A</text>
+        <g fill="white" transform="translate(35, 58)">
+          <ellipse cx="15" cy="4" rx="15" ry="4" />
+          <path d="M30 8V15C30 17.2 23.3 19 15 19C6.7 19 0 17.2 0 15V8C0 10.2 6.7 12 15 12C23.3 12 30 10.2 30 8Z" />
+          <path d="M30 15V22C30 24.2 23.3 26 15 26C6.7 26 0 24.2 0 22V15C0 17.2 6.7 19 15 19C23.3 19 30 17.2 30 15Z" />
+        </g>
+      </svg>
+      <span class="wordmark crt-text">AnswerLayer</span>
+      <span class="tag">Embed API Demo</span>
+    </div>
+    <a class="header-link" href="https://github.com/AnswerLayer/answerlayer-embed-demo">GitHub</a>
+  </header>
+
   <main>
-    <h1>AnswerLayer Embed API Demo</h1>
+    <h1>Dashboard Embed Reference Client</h1>
     <section class="panel">
       <div class="controls">
         <label>
