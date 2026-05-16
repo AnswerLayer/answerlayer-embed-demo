@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AnswerLayer Embed API Demo</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #17202a;
+      background: #f6f7f9;
+    }
+    body {
+      margin: 0;
+      padding: 24px;
+    }
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin: 0 0 16px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid #d9dee7;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #435064;
+    }
+    input, textarea {
+      height: 36px;
+      border: 1px solid #cbd3df;
+      border-radius: 6px;
+      padding: 0 10px;
+      font: inherit;
+    }
+    textarea {
+      height: 74px;
+      padding: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      resize: vertical;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    button {
+      height: 36px;
+      border: 1px solid #1f5eff;
+      border-radius: 6px;
+      padding: 0 12px;
+      background: #1f5eff;
+      color: #fff;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #fff;
+      color: #1f5eff;
+    }
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+    .status {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      background: #101828;
+      color: #d7e3ff;
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 120px;
+      overflow: auto;
+    }
+    .tiles {
+      display: grid;
+      gap: 10px;
+    }
+    .tile {
+      border: 1px solid #d9dee7;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+    .tile header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .tile h2 {
+      margin: 0;
+      font-size: 15px;
+    }
+    .badge {
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eef3ff;
+      color: #1f5eff;
+      white-space: nowrap;
+    }
+    .tile-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .meta-box {
+      border: 1px solid #edf0f5;
+      border-radius: 6px;
+      padding: 8px;
+      background: #fbfcfe;
+      min-width: 0;
+    }
+    .meta-box h3 {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: #526072;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .meta-box div,
+    .meta-box pre {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .meta-box pre {
+      overflow: auto;
+      max-height: 150px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .preview {
+      border: 1px solid #d9dee7;
+      border-radius: 6px;
+      padding: 10px;
+      margin: 10px 0;
+      background: #fff;
+    }
+    .preview-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .metric-value {
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 750;
+      margin: 4px 0;
+    }
+    .bars {
+      display: grid;
+      gap: 6px;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(90px, 180px) 1fr minmax(50px, auto);
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+    }
+    .bar-track {
+      height: 10px;
+      border-radius: 999px;
+      background: #eef1f6;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: #1f5eff;
+    }
+    .muted {
+      color: #667085;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th, td {
+      padding: 6px 8px;
+      border-top: 1px solid #edf0f5;
+      text-align: left;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    th {
+      color: #526072;
+      font-weight: 700;
+    }
+    @media (max-width: 760px) {
+      body { padding: 12px; }
+      .controls { grid-template-columns: 1fr; }
+      .meta-grid { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>AnswerLayer Embed API Demo</h1>
+    <section class="panel">
+      <div class="controls">
+        <label>
+          API base URL
+          <input id="baseUrl" value="http://localhost:8000" />
+        </label>
+        <label>
+          Dashboard ID
+          <input id="dashboardId" value="cf4e6ecd-4721-4379-9ef5-28de455bf6f9" />
+        </label>
+        <label style="grid-column: 1 / -1;">
+          API key
+          <input id="apiKey" type="password" placeholder="al_live_..." autocomplete="off" />
+        </label>
+        <label style="grid-column: 1 / -1;">
+          Request body
+          <textarea id="requestBody">{}</textarea>
+        </label>
+      </div>
+      <div class="actions">
+        <button id="loadManifest">Load Manifest</button>
+        <button id="coldFetch" class="secondary">Fetch Tile Data</button>
+        <button id="warmFetch" class="secondary">Fetch Again</button>
+        <button id="cacheBust" class="secondary">Use Unique Filter</button>
+        <button id="resetBody" class="secondary">Reset Body</button>
+        <button id="clear" class="secondary">Clear</button>
+      </div>
+    </section>
+    <section class="panel">
+      <div id="status" class="status">Ready.</div>
+    </section>
+    <section id="tiles" class="tiles"></section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "answerlayer.embedDemo.v1";
+    const state = { manifest: null, results: new Map(), pages: new Map() };
+    const $ = id => document.getElementById(id);
+    const status = $("status");
+    const tiles = $("tiles");
+
+    function saveForm() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        baseUrl: $("baseUrl").value,
+        dashboardId: $("dashboardId").value,
+        apiKey: $("apiKey").value,
+        requestBody: $("requestBody").value,
+      }));
+    }
+
+    function restoreForm() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        if (saved.baseUrl) $("baseUrl").value = saved.baseUrl;
+        if (saved.dashboardId) $("dashboardId").value = saved.dashboardId;
+        if (saved.apiKey) $("apiKey").value = saved.apiKey;
+        if (saved.requestBody) $("requestBody").value = saved.requestBody;
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+
+    function log(line) {
+      const stamp = new Date().toLocaleTimeString();
+      status.textContent += `\n[${stamp}] ${line}`;
+      status.scrollTop = status.scrollHeight;
+    }
+
+    function config() {
+      saveForm();
+      const baseUrl = $("baseUrl").value.replace(/\/$/, "");
+      const dashboardId = $("dashboardId").value.trim();
+      const apiKey = $("apiKey").value.trim();
+      if (!baseUrl || !dashboardId || !apiKey) throw new Error("Base URL, dashboard ID, and API key are required.");
+      return { baseUrl, dashboardId, apiKey };
+    }
+
+    function requestBody() {
+      const raw = $("requestBody").value.trim() || "{}";
+      const parsed = JSON.parse(raw);
+      if (parsed === null || Array.isArray(parsed) || typeof parsed !== "object") {
+        throw new Error("Request body must be a JSON object.");
+      }
+      return parsed;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function asArray(value) {
+      if (!value) return [];
+      return Array.isArray(value) ? value : [value];
+    }
+
+    function getTileConfig(tile) {
+      return tile.visualization_config || tile.visualizationConfig || {};
+    }
+
+    function resolveChartType(config) {
+      return config.chartType || config.chart_type || config.chart || config.type || "table";
+    }
+
+    function resolveXKey(config, columns) {
+      return config.xAxis || config.x_axis || config.dimension || config.labelKey || columns[0] || null;
+    }
+
+    function resolveSeries(config, columns) {
+      const configured = [
+        ...asArray(config.yAxis || config.y_axis),
+        ...asArray(config.series),
+        ...asArray(config.metrics),
+      ].map(item => typeof item === "string" ? item : item?.key || item?.field || item?.name).filter(Boolean);
+      if (configured.length) return configured;
+      return columns.length > 1 ? [columns[1]] : columns.slice(0, 1);
+    }
+
+    function rowObjects(result) {
+      const columns = result?.columns || [];
+      return (result?.rows || []).map(row => Object.fromEntries(columns.map((col, index) => [col, row[index]])));
+    }
+
+    function renderManifestMeta(tile) {
+      const config = getTileConfig(tile);
+      return `
+        <div class="meta-box">
+          <h3>Manifest metadata</h3>
+          <div><strong>tile_key:</strong> ${escapeHtml(tile.tile_key || "not set")}</div>
+          <div><strong>data_url:</strong> ${escapeHtml(tile.data_url || "not set")}</div>
+          <div><strong>page size:</strong> ${escapeHtml(tile.pagination?.default_page_size ?? "default")}</div>
+        </div>
+        <div class="meta-box">
+          <h3>Tile config</h3>
+          <pre>${escapeHtml(JSON.stringify(config, null, 2))}</pre>
+        </div>
+      `;
+    }
+
+    function renderRenderPlan(tile, result) {
+      const config = getTileConfig(tile);
+      const columns = result?.columns || [];
+      const chartType = resolveChartType(config);
+      const xKey = resolveXKey(config, columns);
+      const series = resolveSeries(config, columns);
+      return `
+        <div class="meta-box">
+          <h3>Derived render plan</h3>
+          <div><strong>renderer:</strong> ${escapeHtml(chartType)}</div>
+          <div><strong>x field:</strong> ${escapeHtml(xKey || "none")}</div>
+          <div><strong>value fields:</strong> ${escapeHtml(series.join(", ") || "none")}</div>
+          <div><strong>available columns:</strong> ${escapeHtml(columns.join(", ") || "fetch data first")}</div>
+        </div>
+      `;
+    }
+
+    function renderInterpretedPreview(tile, result) {
+      if (!result) {
+        return `<div class="preview muted">Fetch tile data to see how the manifest config maps onto returned rows.</div>`;
+      }
+      const config = getTileConfig(tile);
+      const chartType = resolveChartType(config).toLowerCase();
+      const objects = rowObjects(result);
+      const columns = result.columns || [];
+      const xKey = resolveXKey(config, columns);
+      const series = resolveSeries(config, columns);
+      const primary = series[0];
+
+      if (!objects.length) {
+        return `<div class="preview muted">No rows returned for this request.</div>`;
+      }
+
+      if (["metric", "number", "kpi", "stat"].includes(chartType)) {
+        const value = objects[0]?.[primary] ?? objects[0]?.[columns[0]];
+        return `
+          <div class="preview">
+            <div class="preview-title">Metric preview <span class="badge">${escapeHtml(primary || columns[0] || "value")}</span></div>
+            <div class="metric-value">${escapeHtml(value)}</div>
+            <div class="muted">Uses the first row and configured value field.</div>
+          </div>
+        `;
+      }
+
+      if (["bar", "line", "area", "donut", "pie"].includes(chartType)) {
+        const values = objects.slice(0, 8).map(row => {
+          const raw = Number(row[primary]);
+          return { label: row[xKey], value: Number.isFinite(raw) ? raw : 0, display: row[primary] };
+        });
+        const max = Math.max(...values.map(item => Math.abs(item.value)), 1);
+        return `
+          <div class="preview">
+            <div class="preview-title">${escapeHtml(chartType)} preview <span class="badge">${escapeHtml(xKey)} -> ${escapeHtml(primary)}</span></div>
+            <div class="bars">
+              ${values.map(item => `
+                <div class="bar-row">
+                  <span title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</span>
+                  <div class="bar-track"><div class="bar-fill" style="width:${Math.max(2, Math.round(Math.abs(item.value) / max * 100))}%"></div></div>
+                  <strong>${escapeHtml(item.display)}</strong>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="preview">
+          <div class="preview-title">Table preview <span class="badge">${escapeHtml(columns.length)} columns</span></div>
+          ${renderTable(result)}
+        </div>
+      `;
+    }
+
+    function renderTable(result) {
+      const rows = result?.rows || [];
+      const cols = result?.columns || [];
+      return `
+        <table>
+          <thead><tr>${cols.slice(0, 8).map(c => `<th>${escapeHtml(c)}</th>`).join("")}</tr></thead>
+          <tbody>
+            ${rows.slice(0, 5).map(row => `<tr>${row.slice(0, 8).map(v => `<td title="${escapeHtml(v)}">${escapeHtml(v)}</td>`).join("")}</tr>`).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function api(path, options = {}) {
+      const { baseUrl, apiKey } = config();
+      const response = await fetch(`${baseUrl}${path}`, {
+        ...options,
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "X-API-Key": apiKey,
+          ...(options.headers || {}),
+        },
+      });
+      const text = await response.text();
+      let body;
+      try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${typeof body === "string" ? body : JSON.stringify(body)}`);
+      return body;
+    }
+
+    function renderTiles() {
+      const manifestTiles = state.manifest?.tiles || [];
+      tiles.innerHTML = "";
+      for (const tile of manifestTiles) {
+        const result = state.results.get(tile.tile_id);
+        const page = state.pages.get(tile.tile_id) || 1;
+        const el = document.createElement("article");
+        el.className = "tile";
+        const rows = result?.rows || [];
+        el.innerHTML = `
+          <header>
+            <div>
+              <h2>${escapeHtml(tile.title || tile.tile_id)}</h2>
+              <div>${escapeHtml(tile.tile_key || "no tile_key")} · ${escapeHtml(tile.tile_id)}</div>
+            </div>
+            <span class="badge">${result ? `cache_hit=${result.cache_hit}` : "not fetched"}</span>
+          </header>
+          <div class="meta-grid">
+            ${renderManifestMeta(tile)}
+            ${renderRenderPlan(tile, result)}
+          </div>
+          ${renderInterpretedPreview(tile, result)}
+          ${result ? `
+            <div class="badge">${result.row_count} rows returned · total ${result.total_rows ?? "unknown"} · next ${result.next_cursor ? "yes" : "no"}</div>
+            <div class="tile-actions">
+              <button
+                class="secondary"
+                data-next-page="${tile.tile_id}"
+                ${result.result_handle && result.next_cursor ? "" : "disabled"}
+              >Load Next Page</button>
+              <span class="badge">page ${page}</span>
+              <span class="badge">${result.result_handle ? "handle yes" : "handle no"}</span>
+            </div>
+            <div class="muted">${rows.length} rows in current page; raw table is shown above when renderer resolves to table.</div>
+          ` : ""}
+        `;
+        tiles.appendChild(el);
+      }
+      tiles.querySelectorAll("[data-next-page]").forEach(button => {
+        button.addEventListener("click", () => loadNextPage(button.getAttribute("data-next-page")).catch(err => log(`ERROR ${err.message}`)));
+      });
+    }
+
+    async function loadManifest() {
+      const { dashboardId } = config();
+      status.textContent = "Loading manifest...";
+      state.manifest = await api(`/api/v1/dashboards/${dashboardId}/manifest`);
+      state.results.clear();
+      state.pages.clear();
+      log(`manifest loaded: ${state.manifest.tiles.length} tiles`);
+      renderTiles();
+    }
+
+    async function fetchTiles(label) {
+      if (!state.manifest) await loadManifest();
+      const body = requestBody();
+      log(`${label}: fetching ${state.manifest.tiles.length} tiles with ${JSON.stringify(body)}`);
+      for (const tile of state.manifest.tiles) {
+        const started = performance.now();
+        const result = await api(tile.data_url, { method: "POST", body: JSON.stringify(body) });
+        state.results.set(tile.tile_id, result);
+        state.pages.set(tile.tile_id, 1);
+        log(`${tile.title || tile.tile_id}: ${Math.round(performance.now() - started)}ms, cache_hit=${result.cache_hit}, rows=${result.row_count}`);
+        renderTiles();
+      }
+    }
+
+    async function loadNextPage(tileId) {
+      const tile = state.manifest?.tiles.find(item => item.tile_id === tileId);
+      const current = state.results.get(tileId);
+      if (!tile || !current?.result_handle || !current?.next_cursor) {
+        throw new Error("This tile does not have a next page.");
+      }
+      const limit = Math.max(1, Math.min(tile.pagination?.default_page_size || 100, 100));
+      const body = {
+        result_handle: current.result_handle,
+        pagination: { cursor: current.next_cursor, limit }
+      };
+      const started = performance.now();
+      const result = await api(tile.data_url, { method: "POST", body: JSON.stringify(body) });
+      state.results.set(tileId, result);
+      state.pages.set(tileId, (state.pages.get(tileId) || 1) + 1);
+      log(`${tile.title || tile.tile_id}: next page in ${Math.round(performance.now() - started)}ms, rows=${result.row_count}, next=${result.next_cursor ? "yes" : "no"}`);
+      renderTiles();
+    }
+
+    $("loadManifest").addEventListener("click", () => loadManifest().catch(err => log(`ERROR ${err.message}`)));
+    $("coldFetch").addEventListener("click", () => fetchTiles("fetch").catch(err => log(`ERROR ${err.message}`)));
+    $("warmFetch").addEventListener("click", () => fetchTiles("repeat").catch(err => log(`ERROR ${err.message}`)));
+    $("cacheBust").addEventListener("click", () => {
+      $("requestBody").value = JSON.stringify({
+        filters: { "__demo_cache_buster": String(Date.now()) }
+      }, null, 2);
+      saveForm();
+      log("request body changed; next fetch should miss backend cache");
+    });
+    $("resetBody").addEventListener("click", () => {
+      $("requestBody").value = "{}";
+      saveForm();
+      log("request body reset to {}");
+    });
+    $("clear").addEventListener("click", () => {
+      status.textContent = "Ready.";
+      state.manifest = null;
+      state.results.clear();
+      state.pages.clear();
+      tiles.innerHTML = "";
+    });
+    ["baseUrl", "dashboardId", "apiKey", "requestBody"].forEach(id => {
+      $(id).addEventListener("input", saveForm);
+      $(id).addEventListener("change", saveForm);
+    });
+    restoreForm();
+  </script>
+</body>
+</html>
