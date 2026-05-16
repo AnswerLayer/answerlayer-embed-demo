@@ -331,6 +331,19 @@
       word-break: break-word;
     }
 
+    .warning-box {
+      border: 1px solid #d9a400;
+      background: #fff8e1;
+      padding: 8px;
+      margin: 8px 0;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .warning-box ul {
+      margin: 4px 0 0;
+      padding-left: 18px;
+    }
+
     .preview {
       border: 1px solid var(--navy-200);
       padding: 10px;
@@ -551,31 +564,41 @@
         .replaceAll("'", "&#039;");
     }
 
-    function asArray(value) {
-      if (!value) return [];
-      return Array.isArray(value) ? value : [value];
+    function getVisualization(tile) {
+      // The typed `visualization` object is the embed render contract: it
+      // maps each chart role to a column name, so the client never has to
+      // guess from column order or key casing. Older backends that predate
+      // the typed encoding leave `visualization` undefined.
+      return tile.visualization || null;
     }
 
-    function getTileConfig(tile) {
-      return tile.visualization_config || tile.visualizationConfig || {};
-    }
-
-    function resolveChartType(config) {
-      return config.chartType || config.chart_type || config.chart || config.type || "table";
-    }
-
-    function resolveXKey(config, columns) {
-      return config.xAxis || config.x_axis || config.dimension || config.labelKey || columns[0] || null;
-    }
-
-    function resolveSeries(config, columns) {
-      const configured = [
-        ...asArray(config.yAxis || config.y_axis),
-        ...asArray(config.series),
-        ...asArray(config.metrics),
-      ].map(item => typeof item === "string" ? item : item?.key || item?.field || item?.name).filter(Boolean);
-      if (configured.length) return configured;
-      return columns.length > 1 ? [columns[1]] : columns.slice(0, 1);
+    // Resolve the chart type and the column that fills each role straight
+    // from the manifest's typed `visualization.encoding`. No column-name
+    // guessing — that is the whole point of the typed contract.
+    function resolveRenderRoles(viz, columns) {
+      if (!viz) {
+        return { chartType: "table", xKey: null, valueFields: [] };
+      }
+      const enc = viz.encoding || {};
+      const chartType = viz.chart_type || "table";
+      if (chartType === "metric") {
+        return { chartType, xKey: null, valueFields: enc.value ? [enc.value] : [] };
+      }
+      if (chartType === "donut") {
+        return {
+          chartType,
+          xKey: enc.label || null,
+          valueFields: enc.value ? [enc.value] : [],
+        };
+      }
+      if (chartType === "bar" || chartType === "line" || chartType === "area") {
+        return {
+          chartType,
+          xKey: enc.x || null,
+          valueFields: Array.isArray(enc.y) ? enc.y : [],
+        };
+      }
+      return { chartType: "table", xKey: null, valueFields: [] };
     }
 
     function rowObjects(result) {
@@ -584,7 +607,7 @@
     }
 
     function renderManifestMeta(tile) {
-      const config = getTileConfig(tile);
+      const viz = getVisualization(tile);
       return `
         <div class="meta-box">
           <h3>Manifest metadata</h3>
@@ -593,25 +616,26 @@
           <div><strong>page size:</strong> ${escapeHtml(tile.pagination?.default_page_size ?? "default")}</div>
         </div>
         <div class="meta-box">
-          <h3>Tile config</h3>
-          <pre>${escapeHtml(JSON.stringify(config, null, 2))}</pre>
+          <h3>Visualization (typed)</h3>
+          ${viz
+            ? `<pre>${escapeHtml(JSON.stringify(viz, null, 2))}</pre>`
+            : `<div class="muted">No typed <code>visualization</code> on this tile — the backend may predate the typed encoding contract.</div>`}
         </div>
       `;
     }
 
     function renderRenderPlan(tile, result) {
-      const config = getTileConfig(tile);
+      const viz = getVisualization(tile);
       const columns = result?.columns || [];
-      const chartType = resolveChartType(config);
-      const xKey = resolveXKey(config, columns);
-      const series = resolveSeries(config, columns);
+      const { chartType, xKey, valueFields } = resolveRenderRoles(viz, columns);
       return `
         <div class="meta-box">
-          <h3>Derived render plan</h3>
+          <h3>Render plan</h3>
           <div><strong>renderer:</strong> ${escapeHtml(chartType)}</div>
-          <div><strong>x field:</strong> ${escapeHtml(xKey || "none")}</div>
-          <div><strong>value fields:</strong> ${escapeHtml(series.join(", ") || "none")}</div>
+          <div><strong>x / label field:</strong> ${escapeHtml(xKey || "none")}</div>
+          <div><strong>value fields:</strong> ${escapeHtml(valueFields.join(", ") || "none")}</div>
           <div><strong>available columns:</strong> ${escapeHtml(columns.join(", ") || "fetch data first")}</div>
+          <div class="muted">Roles read straight from <code>visualization.encoding</code> — no column-name guessing.</div>
         </div>
       `;
     }
@@ -620,20 +644,18 @@
       if (!result) {
         return `<div class="preview muted">Fetch tile data to see how the manifest config maps onto returned rows.</div>`;
       }
-      const config = getTileConfig(tile);
-      const chartType = resolveChartType(config).toLowerCase();
+      const viz = getVisualization(tile);
       const objects = rowObjects(result);
       const columns = result.columns || [];
-      const xKey = resolveXKey(config, columns);
-      const series = resolveSeries(config, columns);
-      const primary = series[0];
+      const { chartType, xKey, valueFields } = resolveRenderRoles(viz, columns);
+      const primary = valueFields[0];
 
       if (!objects.length) {
         return `<div class="preview muted">No rows returned for this request.</div>`;
       }
 
-      if (["metric", "number", "kpi", "stat"].includes(chartType)) {
-        const value = objects[0]?.[primary] ?? objects[0]?.[columns[0]];
+      if (chartType === "metric") {
+        const value = primary ? objects[0]?.[primary] : objects[0]?.[columns[0]];
         return `
           <div class="preview">
             <div class="preview-title">Metric preview <span class="badge">${escapeHtml(primary || columns[0] || "value")}</span></div>
@@ -643,7 +665,7 @@
         `;
       }
 
-      if (["bar", "line", "area", "donut", "pie"].includes(chartType)) {
+      if (["bar", "line", "area", "donut"].includes(chartType)) {
         const values = objects.slice(0, 8).map(row => {
           const raw = Number(row[primary]);
           return { label: row[xKey], value: Number.isFinite(raw) ? raw : 0, display: row[primary] };
@@ -726,6 +748,12 @@
             ${renderRenderPlan(tile, result)}
           </div>
           ${renderInterpretedPreview(tile, result)}
+          ${result?.encoding_warnings?.length ? `
+            <div class="warning-box">
+              <strong>encoding_warnings</strong> — the tile's encoding references columns the query did not return:
+              <ul>${result.encoding_warnings.map(w => `<li>${escapeHtml(w)}</li>`).join("")}</ul>
+            </div>
+          ` : ""}
           ${result ? `
             <div class="badge">${result.row_count} rows returned · total ${result.total_rows ?? "unknown"} · next ${result.next_cursor ? "yes" : "no"}</div>
             <div class="tile-actions">

@@ -2,7 +2,7 @@
 
 A single-page, dependency-free reference client for the AnswerLayer embed API.
 It loads a dashboard manifest, fetches paginated tile data, and shows how a
-host application can turn the manifest's `visualization_config` into a
+host application turns the manifest's typed `visualization` encoding into a
 rendered chart.
 
 Everything is in one file (`index.html`) — inline HTML, CSS, and vanilla JS,
@@ -36,9 +36,9 @@ Form values persist to `localStorage`.
 
 | Call | Purpose |
 |------|---------|
-| `GET /api/v1/dashboards/{id}/manifest` | Tile list with `tile_key`, `data_url`, and pagination defaults |
+| `GET /api/v1/dashboards/{id}/manifest` | Tile list with `tile_key`, the typed `visualization` encoding, `data_url`, and pagination defaults |
 | `POST {tile.data_url}` | Tile data; supports `filters` and cursor pagination |
-| `POST {tile.data_url}` with `result_handle` + `pagination.cursor` | Next page of a materialized result |
+| `POST {tile.data_url}` with `result_handle` + `pagination.cursor` | Next page of a materialized result (the handle must be one this tile produced) |
 
 Requests authenticate with an `X-API-Key` header.
 
@@ -54,7 +54,8 @@ Requests authenticate with an `X-API-Key` header.
   "result_handle": null,      // present when the result was materialized
   "cache_hit": false,
   "execution_time_ms": 41,
-  "computed_at": "2026-05-16T01:00:00Z"
+  "computed_at": "2026-05-16T01:00:00Z",
+  "encoding_warnings": []     // non-empty if the encoding references missing columns
 }
 ```
 
@@ -64,14 +65,19 @@ through the data.
 
 ## Rendering
 
-The demo derives a render plan from each tile's `visualization_config`:
+Each manifest tile carries a typed `visualization` object whose `encoding`
+maps a chart role to a column name. The demo reads roles straight from it —
+no column-name or key-casing guessing:
 
-- **chart type** — `chartType` / `chart_type` / `chart` / `type`, default `table`
-- **x field** — `xAxis` / `x_axis` / `dimension` / `labelKey`, default first column
-- **value fields** — `yAxis` / `series` / `metrics`, default second column
+- **chart type** — `visualization.chart_type` (`metric`, `bar`, `line`, `area`, `donut`, `table`)
+- **x / label field** — `encoding.x` (axis charts) or `encoding.label` (donut)
+- **value fields** — `encoding.value` (metric/donut) or `encoding.y` (axis charts)
 
-It then draws a metric, bar, or table preview. A host application is free to
-ignore this and feed the columns/rows into its own charting library.
+It resolves each role to a column, finds that column's index in the response
+`columns`, and draws a metric, bar, or table preview. If a tile's response
+carries `encoding_warnings`, the demo shows them — the saved query no longer
+returns a column the encoding names. A host application is free to ignore the
+preview and feed columns/rows into its own charting library.
 
 ## License
 
